@@ -63,7 +63,7 @@ For the given date they are computed as following:
 stations <- read.csv("data/stations.csv")
 temps <- read.csv("data/temps50k.csv")
 st <-merge(stations, temps, by="station_number")
-h_distance <- 300
+h_distance <- 500
 h_date <- 7
 h_time <- 5
 times <- c("04:00:00", "06:00:00", "08:00:00", "10:00:00", "12:00:00", "14:00:00", 
@@ -118,22 +118,6 @@ kernelPredict <- function(data, a, b, date, h_distance, h_date, h_time, times) {
     )
 }
 
-# diffDistance <- getPositionDistance(data$longitude, data$latitude, a, b)
-# diffDate <- getDateDistance(data$date, date)
-# kernDist <- exp(-abs(diffDistance)^2/(h_distance*2*sd(diffDistance)))
-# kernDate <- exp(-abs(diffDate)^2/(h_date*2*sd(diffDate)))
-# predDist <- 1/nData * sum(kernDist * data$air_temperature)
-# predDate <- 1/nData * sum(kernDate * data$air_temperature)
-# predTempSum <- vector(length = length(times))
-# predTempProd <- vector(length = length(times))
-# for(i in 1:length(times)) {
-#     diffTime <- getTimeDistance(data$time, times[i])
-#     kernTime <- exp(-abs(diffTime)^2/(h_time*2*sd(diffTime)))
-#     predTime <- 1/nData * sum(kernTime * data$air_temperature)
-#     predTempSum[i] <- (predDist + predDate + predTime)
-#     predTempProd[i] <- (predDist * predDate * predTime)
-# }
-
 # Date to predict 
 date <- "2015-01-28"
 a <- 66.30020
@@ -168,6 +152,8 @@ ggplot() + geom_point(aes(x=diffTime, y=kernTime)) +
     ggtitle("Kernel Time") + xlab("Time [hours]")
 ```
 
+It can be observed from the kernels shape how the closest observations incide more in the prediction than the ones far from the prediction target in terms of temporal and spatial distances by using the beforementioned distance functions.
+
 If the predictions for a day in winter are computed as 
 
 $$y = \frac{1}{N}\sum_{i=1}^3{\phi_{i}\left(\frac{d_i(\mathbf{obs},\mathbf{pred})}{h_i}\right)}$$
@@ -201,7 +187,8 @@ ggplot() +
     geom_point(aes(x=posixTimes, y=predTempSum, color="Predicted")) +
     geom_line(aes(x=posixTimes, y=meanPredictedSum, color="Mean Predicted Temp")) +
     geom_point(aes(x=realTimes, y=realTemps, color="Real Observation")) +
-    ggtitle("Winter Temperature Prediction - Additive kernels") + xlab("Time")
+    ggtitle("Winter Temperature Prediction - Additive kernels") + 
+    xlab("Time") + ylab("Temperature")
 ```
 
 On the other hand, if the kernels are multiplied instead of added: 
@@ -215,7 +202,8 @@ ggplot() +
     geom_point(aes(x=posixTimes, y=predTempProd, color="Predicted")) +
     geom_line(aes(x=posixTimes, y=meanPredictedProd, color="Mean Predicted Temp")) +
     geom_point(aes(x=realTimes, y=realTemps, color="Real Observation")) +
-    ggtitle("Winter Temperature Prediction - Product kernels") + xlab("Time")
+    ggtitle("Winter Temperature Prediction - Product kernels") + 
+    xlab("Time") + ylab("Temperature")
 ```
 
 If the same exercise is done for a day in summer it is obtained that: 
@@ -269,7 +257,8 @@ ggplot() +
     geom_point(aes(x=posixTimes, y=predTempSum, color="Predicted")) +
     geom_line(aes(x=posixTimes, y=meanPredictedSum, color="Mean Predicted Temp")) +
     geom_point(aes(x=realTimes, y=realTemps, color="Real Observation")) +
-    ggtitle("Summer Temperature Prediction - Additive kernels") + xlab("Time")
+    ggtitle("Summer Temperature Prediction - Additive kernels") + 
+    xlab("Time") + ylab("Temperature")
 
 
 ggplot() +
@@ -277,12 +266,15 @@ ggplot() +
     geom_point(aes(x=posixTimes, y=predTempProd, color="Predicted")) +
     geom_line(aes(x=posixTimes, y=meanPredictedProd, color="Mean Predicted Temp")) +
     geom_point(aes(x=realTimes, y=realTemps, color="Real Observation")) +
-    ggtitle("Summer Temperature Prediction - Product kernels") + xlab("Time")
+    ggtitle("Summer Temperature Prediction - Product kernels") + 
+    xlab("Time") + ylab("Temperature")
 
 ```
 
+It can be seen that the predictions done by adding the different kernels seem to have better results than the ones multiplying them. This might be intepreted as assuming each kernel as independent from the others, the errors will also be independent. As per the multiplication case, errors from one weak prediction will affect the other errors and therefore have a big impact in the overall error. 
 
-\newpage
+Nonetheless there might be some dependencies in the predictors as seasons over the years or temperatures changes during day and night, for this case it is better to assume them as independent and get a lower overall error. 
+
 
 # Support Vector Machines
 Use the function `ksvm` from the R package `kernlab` to learn a SVM for classifying the spam dataset that is included with the package. Consider the radial basis function kernel (also known as Gaussian) with a width of 0.05. For the $C$ parameter, consider values 0.5, 1 and 5.
