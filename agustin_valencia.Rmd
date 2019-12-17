@@ -7,7 +7,8 @@ output: pdf_document
 
 ```{r setup, include=FALSE, setup=TRUE}
 knitr::opts_chunk$set(echo = FALSE)
-set.seed(1234567889)
+suppressWarnings(RNGversion('3.5.1'))
+set.seed(1234567890) 
 library(geosphere)
 library(kernlab)
 library(knitr)
@@ -160,7 +161,7 @@ $$y = \frac{1}{N}\sum_{i=1}^3{\phi_{i}\left(\frac{d_i(\mathbf{obs},\mathbf{pred}
 
 The following results are obtained
 
-```{r , q1=TRUE, out.height='40%', fig.align="center"}
+```{r , q1=TRUE, out.height='38%', fig.align="center"}
 # Getting real temperatures for the given date
 trueData <- st[which(st$date == date),]
 # Getting closer station to compare against
@@ -196,7 +197,7 @@ On the other hand, if the kernels are multiplied instead of added:
 
 $$y = \frac{1}{N}\prod_{i=1}^3{\phi_{i}\left(\frac{d_i(\mathbf{obs},\mathbf{pred})}{h_i}\right)}$$
 
-```{r , q1=TRUE, out.height='40%', fig.align="center"}
+```{r , q1=TRUE, out.height='38%', fig.align="center"}
 ggplot() +
     geom_line(aes(x=posixTimes, y=predTempProd, color="Predicted")) +
     geom_point(aes(x=posixTimes, y=predTempProd, color="Predicted")) +
@@ -208,7 +209,7 @@ ggplot() +
 
 If the same exercise is done for a day in summer it is obtained that: 
 
-```{r, q1=TRUE, out.height='40%', fig.align="center"}
+```{r, q1=TRUE, out.height='38%', fig.align="center"}
 # Date to predict
 date <- "2015-07-26"
 
@@ -290,9 +291,15 @@ choice except cross-validation or nested cross-validation).
 
 ## Solution - Support Vector Machines
 
-The spam dataset has been split in a ratio of 70%/30% for training and testing purposes. The results of the experiments in Appendix B are summarized in the following table (rates are given in % format). 
 
-```{r q2, q2=TRUE}
+The spam dataset has been split in a ratio of 70%/30% for training and testing purposes respectively. 
+
+
+In order to compare the predictors performance, it have been ran experiments to get the training error, number of support vectors, true positives , false negative , false positive, false negative rates and overall misclassification from all the predictors
+
+The code of the experiments is detailed in Appendix B and the results are summarized in the following table (rates are given in % format). 
+
+```{r q2, a2=TRUE}
 
 ## Utils
 splitData <- function(data, trainRate) {
@@ -372,13 +379,16 @@ for (i in 1:length(Cs)) {
                     performance$misclass
                   )
     svmScores[i,] <- svmScore
+    svmModels[[i]] <- svmModel
 }
 kable(svmScores, digits = 2)
 ```
 
-Taking into account that our classifier is meant to detect spam emails, it has to be noticed that the sending a true email to the spambox is way worse than getting spam email in the inbox. That is measured by the False Positive rate which is somewhat similar for all of the predictors. 
+Taking into account that our classifier is meant to detect spam emails, it has to be noticed that, from the users perspective, loosing true email in the spambox is way worse than getting spam email in the inbox. That is measured by the False Positive Rate, for which $C=0.5$ get the best score.
 
-Analyzing the overall misclassification it is seen that $C=5.0$ gets the better score, also it shows the best training error rate and the lowest amount of support vectors which indicates that it is the one with the lower tendency to overfit the data (the more **general** one). Although it is the one showing the lowest True Positive Rate, still a very good number.
+Analyzing the overall misclassification it is seen that $C=5.0$ gets the better score, though, it also gets a higher False Positive rate than $C=0.5$, which has been said is the most important score for this application. Thus, we drop it anyway.
+
+Regarding the amount of support vectors chosen by the model training, one might tend to think that the highest the amount of support vectors the overfitted the model, which is not false at all, though it is not always true. Having a wider soft margin might also produce more support vectors in the sense of the dynamics of \emph{pushing} (support vectors in the right side of the hyperplane) and \emph{pulling} (support vectors in the wrong side of the hyperplane). This can be interpreted as the highest training error for model $C=0.5$
 
 Therefore the chosen model to be deployed into the customer's system would be the following:
 
@@ -388,19 +398,14 @@ svmToDeploy <- ksvm(
     data=spam, 
     type="C-svc",
     kernel="rbfdot",
-    C = 5.0, 
+    C = 0.5, 
     kpar = list(sigma = 0.05)
 )
 ```
 
-Parameter $C$ denotes the inverse of the regularization penalization. The bigger the $C$ the smaller the soft margin between the classes to learn, thus, the more strict the learning process which could lead to overfit the data, fortunately that does not happen in this application because the amount of support vectors chosen by the model is even smaller than for the ones with lower penalization.
+Parameter $C$ denotes the inverse of the regularization penalization. The bigger the $C$ the smaller the soft margin between the classes to learn, thus, the more strict the learning process which could lead to overfit the data. Fortunately that is not the case for this classifier, since it gets even better scores under testing data than the more relaxed models. 
 
-
-
-
-
-
-
+Cross-validation still recommended in order to get the best results possible for the classifier, though for this assignment we are not allowed to perform that type of analisys.
 
 
 
