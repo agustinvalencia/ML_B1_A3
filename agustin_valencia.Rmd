@@ -393,7 +393,7 @@ svmToDeploy <- ksvm(
 )
 ```
 
-$C$ parameter denotes the inverse of the regularization penalization. The bigger the $C$ the small the boundary of the classifier.
+Parameter $C$ denotes the inverse of the regularization penalization. The bigger the $C$ the smaller the soft margin between the classes to learn, thus, the more strict the learning process which could lead to overfit the data, fortunately that does not happen in this application because the amount of support vectors chosen by the model is even smaller than for the ones with lower penalization.
 
 
 
