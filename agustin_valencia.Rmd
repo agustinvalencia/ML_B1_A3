@@ -299,7 +299,7 @@ In order to compare the predictors performance, it have been ran experiments to 
 
 The code of the experiments is detailed in Appendix B and the results are summarized in the following table (rates are given in % format). 
 
-```{r q2, a2=TRUE}
+```{r q2, q2=TRUE}
 
 ## Utils
 splitData <- function(data, trainRate) {
