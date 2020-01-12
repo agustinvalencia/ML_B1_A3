@@ -13,6 +13,7 @@ library(geosphere)
 library(kernlab)
 library(knitr)
 library(ggplot2)
+library(neuralnet)
 ```
 
 # Kernel Methods
@@ -408,23 +409,127 @@ Parameter $C$ denotes the inverse of the regularization penalization. The bigger
 Cross-validation still recommended in order to get the best results possible for the classifier, though for this assignment we are not allowed to perform that type of analisys.
 
 
+\newpage
+# Neural networks
+
+Train a neural network to learn the trigonometric sine function. To do so, sample 50 points uniformly at random in the interval [0,10]. Apply the sine function to each point. The resulting pairs are the data available to you. Use 25 of the 50 for training and the rest for validation. The validation set is used for early stop of the gradient descent. That is, you should use the validation set to detect when to stop the gradient descent and so avoid overfitting. 
+
+Stop the gradient descent when the partial derivatives of the error function are below a given threshold value. Check the argument ```threshold``` in the documentation. Consider threshold $i/1000$ with $i=1,...,1000$. Initialize the weights of the neural network to random values in the interval [-1,1]. Use a neural network with a single hidden layer of 10 units. **Use the default values for the arguments not mentioned here**. Choose the most appropriate value for the threshold. Motivate your choice. Provide the final neural network learned with the chosen threshold. Feel free to use the following template:
+
+```{r, echo=TRUE, eval=FALSE}
+library(neuralnet)
+set.seed(1234567890)
+Var <- runif(50, 0, 10)
+trva <- data.frame(Var, Sin=sin(Var))
+tr <- trva[1:25,] # Training
+va <- trva[26:50,] # Validation
+# Random initialization of the weights in the interval [-1, 1]
+winit <- # Your code here
+for(i in 1:10) {
+  nn <- neuralnet(# Your code here)
+  # Your code here
+}
+plot(nn <- neuralnet(# Your code here))
+# Plot of the predictions (black dots) and the data (red dots)
+plot(prediction(nn)$rep1)
+points(trva, col = "red")
+```
+
+
+## Solution - Neural Networks
+
+After experimenting with the given thresholds, the following errors have been found
+
+```{r, q3=TRUE}
+getMSE <- function (target, prediction) {
+    if(length(target) != length(prediction)) {
+        stop("lengths must match")
+    }
+    res <- mean((target-prediction)^2)
+    return(res)
+}
+
+Var <- runif(50, 0, 10)
+trva <- data.frame(Var, Sin=sin(Var))
+tr <- trva[1:25,] # Training
+va <- trva[26:50,] # Validation
+
+# Random initialization of the weights in the interval [-1, 1]
+winit <- runif(31, -1, 1)
+trError <- vector(length=10)
+valError <- vector(length=10)
+for(i in 1:10) {
+  nn <- neuralnet(
+      Sin ~ Var, 
+      data = tr, 
+      hidden=10, 
+      threshold = i/1000, 
+      startweights = winit
+    )
+  trPred <- predict(nn, tr)
+  valPred <- predict(nn, va)
+  trError[i] <- getMSE(va$Sin, trPred)
+  valError[i] <- getMSE(va$Sin, valPred)
+}
+
+pTr <- ggplot() + ggtitle("NeuralNet errors Training") +
+        geom_point(aes(x=(seq(1:10)/1000), y=trError, color="Training")) + 
+        geom_line(aes(x=(seq(1:10)/1000), y=trError, color="Training")) + 
+        xlab("Threshold") + ylab("MSE")
+pVal <- ggplot() + ggtitle("NeuralNet errors Validation") +
+        geom_point(aes(x=(seq(1:10)/1000), y=valError, color="Validation")) + 
+        geom_line(aes(x=(seq(1:10)/1000), y=valError, color="Validation")) + 
+        xlab("Threshold") + ylab("MSE")
+pTr
+pVal
+
+#plot(nn <- neuralnet(# Your code here))
+## Plot of the predictions (black dots) and the data (red dots)
+#plot(prediction(nn)$rep1)
+#points(trva, col = "red")
+
+```
+As seen, although that the highest training error is obtained at $i=1$, also the best validation error occurs at that treshold. This is the best scenario because we have a good generalization (given the training error) and a nice behavior in unseen data. 
+
+Thus, the final network to deliver will be
+
+```{r, q3=TRUE, echo=TRUE}
+nn <- neuralnet (
+    Sin ~ Var, 
+    data = tr, 
+    hidden=10, 
+    threshold = 1/1000, 
+    startweights = winit
+)
+```
+
+Checking its predictions
+
+```{r, q3=TRUE}
+
+```
 
 
 
 \newpage
-# Appendix A : Code for Assignment 1
+# Appendix A : Code for Assignment 1 - Kernel Methods
 
 ```{r, ref.label=knitr::all_labels(q1==TRUE),echo=TRUE,eval=FALSE}
 ```
 
 \newpage
-# Appendix B : Code for Assignment 2
+# Appendix B : Code for Assignment 2 - Support Vector Machines
 
 ```{r, ref.label=knitr::all_labels(q2==TRUE),echo=TRUE,eval=FALSE}
 ```
 
 \newpage
-# Appendix C : Environment setup Code
+# Appendix C : Code for Assignment 3 - Neural Networks
+```{r, ref.label=knitr::all_labels(q3==TRUE),echo=TRUE,eval=FALSE}
+```
+
+\newpage
+# Appendix D : Environment setup Code
 
 ```{r, ref.label=knitr::all_labels(setup==TRUE),echo=TRUE,eval=FALSE}
 ```
